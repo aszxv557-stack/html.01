@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>❀ 個人生理期每日智慧健康系統</title>
+    <style>
+        body { font-family: 'Microsoft JhengHei', sans-serif; max-width: 750px; margin: 30px auto; padding: 20px; color: #4A4A4A; line-height: 1.6; background-color: #FFFDFE; }
+        .box { border: 1px solid #F4DDDF; padding: 20px; border-radius: 8px; background: #FCF5F7; margin-bottom: 20px; }
+        .welcome-box { border: 2px dashed #E8D3D1; background: #FCF5F7; }
+        input[type="text"], input[type="date"], input[type="number"], select, button { padding: 10px; margin: 8px 0; width: 100%; box-sizing: border-box; border: 1px solid #E8D3D1; border-radius: 4px; }
+        button { background-color: #F4DDDF; color: #5A4A4A; border: 1px solid #E8D3D1; font-weight: bold; cursor: pointer; transition: background 0.2s; }
+        button:hover { background-color: #E8D3D1; color: #5A4A4A; }
+        table { width: 100%; border-collapse: collapse; margin-top: 15px; background: white; }
+        th, td { border: 1px solid #F4DDDF; padding: 10px; text-align: left; font-size: 0.92em; }
+        th { background-color: #F4DDDF; color: #5A4A4A; }
+        .btn-pdf { background-color: #8AC4DE; color: white; border: none; font-size: 1.05em; padding: 12px; margin-top: 15px; }
+        .btn-pdf:hover { background-color: #6C9BD2; }
+        .form-group { margin-bottom: 15px; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
+        .checkbox-item { background: white; border: 1px solid #F4DDDF; padding: 6px 12px; border-radius: 20px; cursor: pointer; font-size: 0.9em; }
+        .checkbox-item input { margin-right: 5px; }
+        .sub-group { background: #FFFDFE; padding: 12px; border-radius: 6px; margin-top: 8px; display: none; border: 1px solid #F4DDDF; }
+        .calendar-tags { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+        .tag { padding: 10px; border-radius: 6px; font-weight: bold; }
+        .tag-prediction { background-color: #FCF5F7; color: #5A4A4A; border-left: 5px solid #9FD0DE; }
+        .tag-danger { background-color: #FCF5F7; color: #5A4A4A; border-left: 5px solid #F4DDDF; }
+        .tag-safe { background-color: #FCF5F7; color: #5A4A4A; border-left: 5px solid #8AC4DE; }
+        .text-highlight { color: #6C9BD2; font-weight: bold; }
+        .chart-container { width: 100%; background: white; padding: 15px; border-radius: 6px; border: 1px solid #F4DDDF; box-sizing: border-box; }
+        .legend-container { display: flex; gap: 20px; justify-content: center; margin-bottom: 10px; font-size: 0.85em; }
+        .legend-item { display: flex; align-items: center; gap: 5px; }
+        .legend-line { width: 25px; height: 3px; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+        @media print { .no-print, form, button { display: none !important; } }
+    </style>
+</head>
+<body>
+
+    <h2 class="no-print" style="color: #5A4A4A;">❀ 生理期每日隨手記與智慧推演系統 (GitHub 雲端版)</h2>
+    
+    <div id="alertBox"></div>
+
+    <div class="box no-print" id="loginBox">
+        <label>☛ 請輸入您的名字建立或登入雲端檔案：</label>
+        <input type="text" id="usernameInput" placeholder="例如：Mary">
+        <button onclick="loginUser()">確認名字 / 尋找紀錄</button>
+    </div>
+
+    <div id="mainApp" style="display: none;">
+        <h3>目前使用者：<span style="color:#6C9BD2;" id="currentUserName"></span></h3>
+        
+        <div class="box welcome-box no-print" id="setupBox" style="display: none;">
+            <h3 style="color: #5A4A4A; margin-top: 0;">❀ 歡迎新朋友 <span class="setup-name"></span></h3>
+            <p>請先填寫基本初始資訊，建立您的專屬女性健康檔案：</p>
+            
+            <div class="form-group">
+                <label><b>☛ 請問這是您人生中第一次生理期來潮（初經）嗎？</b></label>
+                <select id="isFirstMenstruation" onchange="handleFirstTimeChange()">
+                    <option value="">-- 請選擇 --</option>
+                    <option value="no">不是，我以前就來過了</option>
+                    <option value="yes">是的，這是我的第一次（初經）</option>
+                </select>
+            </div>
+
+            <div id="sectionNotFirst" style="display: none;">
+                <div class="form-group">
+                    <label><b>📅 上一次生理期開始日期：</b></label>
+                    <input type="date" id="notFirstStart">
+                </div>
+                <div class="form-group">
+                    <label><b>📅 上一次生理期結束日期：</b></label>
+                    <input type="date" id="notFirstEnd">
+                </div>
+                <div class="form-group">
+                    <label><b>請問您的生理期平均週期大約是多少天？</b></label>
+                    <select id="cycleLength"></select>
+                </div>
+            </div>
+
+            <div id="sectionIsFirst" style="display: none;">
+                <div class="form-group">
+                    <label><b>📅 請問本次初經是在哪一天開始的？</b></label>
+                    <input type="date" id="firstStart">
+                </div>
+                <div class="form-group">
+                    <label><b>預估平均週期天數：</b></label>
+                    <select id="firstCycleLength"></select>
+                </div>
+            </div>
+            
+            <button onclick="saveInitialSetup()">建立檔案並開通天天紀錄功能</button>
+        </div>
+
+        <div id="dashboardBox" style="display: none;">
+            <div class="box">
+                <h4 style="margin-top:0; color:#5A4A4A;">📊 個人化智慧經期與波動預測面板</h4>
+                <p id="cycleSummary"></p>
+                <div class="calendar-tags">
+                    <div class="tag tag-prediction" id="nextPeriodTag"></div>
+                    <div class="tag tag-danger" id="ovulationTag"></div>
+                    <div class="tag tag-safe">🛡️ 安全期：除了上述排卵期與經期以外的時間。</div>
+                </div>
+            </div>
+
+            <div class="box">
+                <h4 style="margin-top:0; color:#5A4A4A;">📈 專屬體內激素規律動態變化圖</h4>
+                <p style="font-size:0.85em; color:#666;" id="chartDaySummary"></p>
+                <div class="chart-container">
+                    <div class="legend-container">
+                        <div class="legend-item"><div class="legend-line" style="background: #6C9BD2;"></div>雌激素 (Estrogen)</div>
+                        <div class="legend-item"><div class="legend-line" style="background: #E8D3D1;"></div>孕激素 (Progesterone)</div>
+                        <div class="legend-item"><div class="legend-dot" style="background: #8AC4DE;"></div>您今天的位置</div>
+                    </div>
+                    <svg id="hormoneSvg" viewBox="0 0 660 240" width="100%" height="100%" style="overflow: visible;"></svg>
+                </div>
+            </div>
+
+            <div class="box no-print">
+                <h4 style="margin-top:0; color: #5A4A4A;">📝 記錄單日身體狀況（天天皆可紀錄）</h4>
+                <div class="form-group">
+                    <label><b>選擇欲紀錄的日期：</b></label>
+                    <input type="date" id="recordDate">
+                </div>
+                <div class="form-group">
+                    <label><b>☛ 1. 今日經血量：</b></label>
+                    <select id="bloodFlowLevel">
+                        <option value="沒有月經量" selected>沒有月經量 (乾淨狀態)</option>
+                        <option value="量少">量少</option>
+                        <option value="量適中">量適中</option>
+                        <option value="量多">量多</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label><b>☛ 2. 今日身體症狀：</b></label>
+                    <div class="checkbox-group" id="symptomsGroup"></div>
+                </div>
+                <div class="form-group" style="border-top: 1px dashed #E8D3D1; padding-top: 10px;">
+                    <label><b>☛ 3. 今天是否有發生性行為？</b></label>
+                    <select id="hasSexActivity" onchange="toggleSexActivity()">
+                        <option value="no" selected>否</option>
+                        <option value="yes">是</option>
+                    </select>
+                    <div id="contraceptionBox" class="sub-group">
+                        <label><b>採取之避孕方式：</b></label>
+                        <select id="contraceptionMethod">
+                            <option value="保險套" selected>保險套 (預設)</option>
+                            <option value="事前藥物">事前藥物</option>
+                            <option value="事後藥物">事後藥物</option>
+                            <option value="貼片">貼片</option>
+                            <option value="注射式">注射式</option>
+                            <option value="植入式">植入式</option>
+                            <option value="無避孕措施">未採取任何避孕措施</option>
+                            <option value="其他">其他</option>
+                        </select>
+                    </div>
+                </div>
+                <button onclick="saveDailyRecord()">儲存今日狀態</button>
+            </div>
+
+            <div class="box">
+                <h4 style="margin-top:0; color:#5A4A4A;">📄 每日健康日誌歷程牆</h4>
+                <table id="recordsTable">
+                    <thead>
+                        <tr>
+                            <th>紀錄日期</th>
+                            <th>月經血量</th>
+                            <th>當日身體症狀</th>
+                            <th>性行為</th>
+                            <th>避孕措施</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recordsTableBody"></tbody>
+                </table>
+                <button class="btn-pdf no-print" onclick="window.print()">📄 匯出此畫面為健康 PDF 報告</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentUser = "";
+        const symptomList = ["頭痛", "肚子痛", "下背痛", "心情變化", "疲勞", "食慾改變", "噁心", "腹瀉"];
+        
+        // 初始化週期選單
+        function initSelects() {
+            const options = Array.from({length: 81}, (_, i) => `<option value="${i+10}" ${i+10===30?'selected':''}>${i+10} 天</option>`).join('');
+            document.getElementById('cycleLength').innerHTML = options;
+            document.getElementById('firstCycleLength').innerHTML = options;
+            document.getElementById('recordDate').value = new Date().toISOString().split('T')[0];
+            
+            document.getElementById('symptomsGroup').innerHTML = symptomList.map(s => 
+                `<label class="checkbox-item"><input type="checkbox" name="symptoms" value="${s}">${s}</label>`
+            ).join('');
+        }
+
+        function handleFirstTimeChange() {
+            const isFirst = document.getElementById('isFirstMenstruation').value;
+            document.getElementById('sectionIsFirst').style.display = isFirst === 'yes' ? 'block' : 'none';
+            document.getElementById('sectionNotFirst').style.display = isFirst === 'no' ? 'block' : 'none';
+        }
+
+        function toggleSexActivity() {
+            document.getElementById('contraceptionBox').style.display = document.getElementById('hasSexActivity').value === 'yes' ? 'block' : 'none';
+        }
+
+        function getUserData() {
+            return JSON.parse(localStorage.getItem('period_data_' + currentUser)) || { records: [], default_cycle: 30 };
+        }
+
+        function saveUserData(data) {
+            localStorage.setItem('period_data_' + currentUser, JSON.stringify(data));
+        }
+
+        function loginUser() {
+            currentUser = document.getElementById('usernameInput').value.trim();
+            if (!currentUser) return alert('請輸入名字');
+            
+            document.getElementById('loginBox').style.display = 'none';
+            document.getElementById('mainApp').style.display = 'block';
+            document.getElementById('currentUserName').innerText = currentUser;
+            
+            const data = getUserData();
+            if (data.records.length === 0) {
+                document.querySelectorAll('.setup-name').forEach(el => el.innerText = currentUser);
+                document.getElementById('setupBox').style.display = 'block';
+                document.getElementById('dashboardBox').style.display = 'none';
+            } else {
+                document.getElementById('setupBox').style.display = 'none';
+                document.getElementById('dashboardBox').style.display = 'block';
+                renderDashboard();
+            }
+        }
+
+        function saveInitialSetup() {
+            const isFirst = document.getElementById('isFirstMenstruation').value;
+            let records = [];
+            let cycle = 30;
+
+            if (isFirst === 'yes') {
+                const date = document.getElementById('firstStart').value;
+                cycle = parseInt(document.getElementById('firstCycleLength').value);
+                if (!date) return alert('請選擇日期');
+                records.push({ date, blood_flow: '量適中', symptoms: '初經來潮第一天', sex: '否', contra: '無', type: 'daily' });
+            } else {
+                const start = document.getElementById('notFirstStart').value;
+                const end = document.getElementById('notFirstEnd').value;
+                cycle = parseInt(document.getElementById('cycleLength').value);
+                if (!start || !end) return alert('請選擇完整日期');
+                
+                let sDate = new Date(start);
+                let eDate = new Date(end);
+                while(sDate <= eDate) {
+                    records.push({
+                        date: sDate.toISOString().split('T')[0],
+                        blood_flow: '量適中', symptoms: '上一次歷史經期紀錄', sex: '否', contra: '無', type: 'history'
+                    });
+                    sDate.setDate(sDate.getDate() + 1);
+                }
+            }
+            saveUserData({ records, default_cycle: cycle });
+            document.getElementById('setupBox').style.display = 'none';
+            document.getElementById('dashboardBox').style.display = 'block';
+            renderDashboard();
+        }
+
+        function saveDailyRecord() {
+            const date = document.getElementById('recordDate').value;
+            const blood_flow = document.getElementById('bloodFlowLevel').value;
+            const sex = document.getElementById('hasSexActivity').value === 'yes' ? '有' : '否';
+            const contra = sex === '有' ? document.getElementById('contraceptionMethod').value : '無';
+            
+            const checks = document.querySelectorAll('input[name="symptoms"]:checked');
+            const symptoms = checks.length > 0 ? Array.from(checks).map(c => c.value).join('、') : '無症狀';
+
+            let data = getUserData();
+            // 移除同日舊紀錄
+            data.records = data.records.filter(r => r.date !== date);
+            data.records.push({ date, blood_flow, symptoms, sex, contra, type: 'daily' });
+            saveUserData(data);
+            renderDashboard();
+            alert('儲存成功！');
+        }
+
+        function renderDashboard() {
+            const data = getUserData();
+            let records = data.records.sort((a,b) => new Date(a.date) - new Date(b.date));
+            
+            // 分析週期日
+            let flowDates = records.filter(r => ['量少','量適中','量多'].includes(r.blood_flow)).map(r => new Date(r.date));
+            let periodStarts = [];
+            if (flowDates.length > 0) {
+                periodStarts.push(flowDates[0]);
+                for(let i=1; i<flowDates.length; i++) {
+                    if ((flowDates[i] - flowDates[i-1]) / (1000*60*60*24) > 10) {
+                        periodStarts.push(flowDates[i]);
+                    }
+                }
+            }
+
+            let userCycle = data.default_cycle;
+            let lastStart = periodStarts.length > 0 ? periodStarts[periodStarts.length - 1] : null;
+            
+            // 警報機制
+            let showAlert = false;
+            if (periodStarts.length >= 2) {
+                let anomalyFlags = [];
+                for(let i=1; i<periodStarts.length; i++) {
+                    let diff = (periodStarts[i] - periodStarts[i-1]) / (1000*60*60*24);
+                    let expected = new Date(periodStarts[i-1]);
+                    expected.setDate(expected.getDate() + userCycle);
+                    let deviation = Math.abs((periodStarts[i] - expected) / (1000*60*60*24));
+                    anomalyFlags.push(diff < 21 || diff > 35 || deviation > 7);
+                }
+                if (anomalyFlags.length >= 5 && anomalyFlags.slice(-5).every(x => x)) showAlert = true;
+            }
+
+            document.getElementById('alertBox').innerHTML = showAlert ? `
+                <div class="no-print" style="background-color: #FFF9F3; border: 2px solid #E8D3D1; color: #8A6562; padding: 15px; border-radius: 8px; margin-bottom: 25px; font-weight: bold; font-size: 0.95em;">
+                    ❕ 溫馨提示：系統偵測到連續 5 次以上不規律，建議諮詢婦產科醫師。
+                </div>` : '';
+
+            let currentDayInCycle = 1;
+            if (lastStart) {
+                let today = new Date();
+                let diffDays = Math.floor((today - lastStart) / (1000*60*60*24));
+                currentDayInCycle = diffDays >= 0 ? (diffDays % userCycle) + 1 : 1;
+
+                let nextStart = new Date(lastStart); nextStart.setDate(nextStart.getDate() + userCycle);
+                let wStart = new Date(nextStart); wStart.setDate(wStart.getDate() - 7);
+                let wEnd = new Date(nextStart); wEnd.setDate(wEnd.getDate() + 7);
+                let ovulation = new Date(nextStart); ovulation.setDate(ovulation.getDate() - 14);
+                let dStart = new Date(ovulation); dStart.setDate(dStart.getDate() - 5);
+                let dEnd = new Date(ovulation); dEnd.setDate(dEnd.getDate() + 4);
+
+                document.getElementById('cycleSummary').innerHTML = `最近一次開始日：<b>${lastStart.toISOString().split('T')[0]}</b>（設定週期：<span class="text-highlight">${userCycle} 天</span>）`;
+                document.getElementById('nextPeriodTag').innerHTML = `📅 下次生理期預計：${nextStart.toISOString().split('T')[0]} <br><span style="font-size:0.85em;font-weight:normal;color:#666;">(波動區間：${wStart.toISOString().split('T')[0]} ~ ${wEnd.toISOString().split('T')[0]})</span>`;
+                document.getElementById('ovulationTag').innerHTML = `❀ 排卵危險期：${dStart.toISOString().split('T')[0]} ～ ${dEnd.toISOString().split('T')[0]}`;
+                document.getElementById('chartDaySummary').innerHTML = `依據您設定的 ${userCycle} 天週期推演，目前處於週期的第 <span class="text-highlight">${currentDayInCycle}</span> 天：`;
+            } else {
+                document.getElementById('cycleSummary').innerText = '請持續紀錄以開啟智慧推演面板。';
+            }
+
+            // 渲染表格
+            document.getElementById('recordsTableBody').innerHTML = [...records].reverse().map(r => `
+                <tr>
+                    <td><b>${r.date}</b></td>
+                    <td>${r.blood_flow}</td>
+                    <td><span style="color:#666;">${r.symptoms}</span></td>
+                    <td>${r.sex}</td>
+                    <td><span class="text-highlight">${r.contra}</span></td>
+                </tr>
+            `).join('');
+
+            drawSvgChart(userCycle, currentDayInCycle);
+        }
+
+        function drawSvgChart(userCycle, currentDay) {
+            const W = 660, H = 240, padL = 40, padR = 20, padT = 20, padB = 35;
+            const gw = W - padL - padR, gh = H - padT - padB;
+            const oIdx = userCycle - 14;
+            
+            let estPts = [], progPts = [], tX = null, tY = null;
+            let svgContent = "";
+
+            // 網格 Y 軸
+            for (let i = 0; i <= 100; i += 20) {
+                let y = padT + gh - (i / 100) * gh;
+                svgContent += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#F0F0F0" stroke-width="1"/>`;
+                svgContent += `<text x="${padL-8}" y="${y+4}" font-size="10" fill="#888" text-anchor="end">${i}</text>`;
+            }
+
+            // 網格 X 軸
+            let step = Math.max(1, Math.floor(userCycle / 10));
+            for (let i = 0; i < userCycle; i += step) {
+                let x = padL + (i / (userCycle - 1)) * gw;
+                svgContent += `<line x1="${x}" y1="${padT}" x2="${x}" y2="${padT+gh}" stroke="#F0F0F0" stroke-width="1"/>`;
+                svgContent += `<text x="${x}" y="${padT+gh+15}" font-size="10" fill="#888" text-anchor="middle">${i+1}</text>`;
+            }
+
+            // 計算曲線
+            for (let i = 0; i < userCycle; i++) {
+                let day = i + 1;
+                let vEst = day <= oIdx ? 10 + 80 * Math.pow(day/oIdx, 2) : (day <= oIdx+14 ? 40 + 30*Math.sin((day-oIdx)*Math.PI/14) : 10);
+                let vProg = day <= oIdx ? 5 : 5 + 75 * Math.sin((day-oIdx)*Math.PI/14);
+
+                let x = padL + (i / (userCycle - 1)) * gw;
+                let yEst = padT + gh - (vEst / 100) * gh;
+                let yProg = padT + gh - (vProg / 100) * gh;
+
+                estPts.push(`${x},${yEst}`);
+                progPts.push(`${x},${yProg}`);
+
+                if (day === currentDay) { tX = x; tY = padT + gh - (95 / 100) * gh; }
+            }
+
+            svgContent += `<line x1="${padL}" y1="${padT}" x2="${padL}" y2="${padT+gh}" stroke="#CCCCCC"/>`;
+            svgContent += `<line x1="${padL}" y1="${padT+gh}" x2="${W-padR}" y2="${padT+gh}" stroke="#CCCCCC"/>`;
+            svgContent += `<text x="${padL-25}" y="${padT-5}" font-size="9" fill="#666" font-weight="bold">濃度(%)</text>`;
+            svgContent += `<text x="${W-padR}" y="${padT+gh+30}" font-size="9" fill="#666" font-weight="bold" text-anchor="end">天數(Day)</text>`;
+            
+            svgContent += `<polyline points="${estPts.join(' ')}" fill="none" stroke="#6C9BD2" stroke-width="2.5"/>`;
+            svgContent += `<polyline points="${progPts.join(' ')}" fill="none" stroke="#E8D3D1" stroke-width="2.5"/>`;
+
+            if (tX !== null) {
+                svgContent += `<circle cx="${tX}" cy="${tY}" r="7" fill="#8AC4DE" />`;
+                svgContent += `<line x1="${tX}" y1="${padT}" x2="${tX}" y2="${padT+gh}" stroke="#8AC4DE" stroke-dasharray="4,4" stroke-width="1.5"/>`;
+            }
+
+            document.getElementById('hormoneSvg').innerHTML = svgContent;
+        }
+
+        window.onload = initSelects;
+    </script>
+</body>
+</html>
